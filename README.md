@@ -67,6 +67,13 @@ docker compose down
 ```
 
 Docker Compose stores SQLite history in `./data` and exported conversations in `./exports`.
+The container starts as root only long enough to prepare those mounted directories, then runs the bot as the non-root `relay` user.
+
+If you change the image files, rebuild before starting:
+
+```bash
+docker compose up -d --build
+```
 
 ## Admin Workflow
 
