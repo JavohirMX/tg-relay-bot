@@ -1,0 +1,12 @@
+services:
+  relay-bot:
+    build: .
+    image: telegram-relay-bot:latest
+    env_file:
+      - .env
+    environment:
+      DATABASE_PATH: /app/data/relay_bot.sqlite3
+    volumes:
+      - ./data:/app/data
+      - ./exports:/app/exports
+    restart: unless-stopped

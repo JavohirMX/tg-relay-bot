@@ -1,0 +1,14 @@
+.env
+.venv/
+.git/
+.gitignore
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
+data/
+exports/
+*.sqlite3
+*.db
+tests/

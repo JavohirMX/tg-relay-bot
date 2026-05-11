@@ -38,6 +38,36 @@ cp .env.example .env
 relay-bot
 ```
 
+## Docker
+
+The bot uses Telegram long polling, so the container does not need any inbound ports.
+
+1. Create `.env` and fill in `BOT_TOKEN` and `ADMIN_TELEGRAM_ID`:
+
+```bash
+cp .env.example .env
+```
+
+2. Build and start the bot:
+
+```bash
+docker compose up -d --build
+```
+
+3. Follow logs:
+
+```bash
+docker compose logs -f relay-bot
+```
+
+4. Stop the bot:
+
+```bash
+docker compose down
+```
+
+Docker Compose stores SQLite history in `./data` and exported conversations in `./exports`.
+
 ## Admin Workflow
 
 When a stranger messages the bot, you receive a rich relay card and a copy of their message. Reply to the copied message in your admin chat to send a response back to that stranger.
