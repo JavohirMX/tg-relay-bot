@@ -308,13 +308,16 @@ class Store:
 
     async def search_messages(self, query: str, limit: int = 10) -> list[dict[str, Any]]:
         connection = await self.database.connection()
-        like = f"%{query}%"
+        # Escape LIKE wildcards so "100%" or "a_b" is searched literally.
+        escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        like = f"%{escaped}%"
         cursor = await connection.execute(
             """
             SELECT m.*, u.display_name, u.username
             FROM messages m
             JOIN users u ON u.telegram_id = m.user_id
-            WHERE COALESCE(m.text, '') LIKE ? OR COALESCE(m.caption, '') LIKE ?
+            WHERE COALESCE(m.text, '') LIKE ? ESCAPE '\\'
+               OR COALESCE(m.caption, '') LIKE ? ESCAPE '\\'
             ORDER BY m.created_at DESC
             LIMIT ?
             """,

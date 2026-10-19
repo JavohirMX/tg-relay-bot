@@ -111,3 +111,28 @@ async def test_store_mutes_recent_chats_and_forgets_user(tmp_path):
     assert await store.get_user(1001) is None
 
     await database.close()
+
+
+async def test_search_messages_treats_like_wildcards_literally(tmp_path):
+    database = Database(tmp_path / "relay.sqlite3")
+    await database.initialize()
+    store = Store(database)
+    await store.upsert_user(User(id=1, is_bot=False, first_name="Guest"))
+    conversation_id = await store.ensure_conversation(1)
+    for text in ("100% sure", "100 apples", "a_b", "axb", "back\\slash"):
+        await store.record_message(
+            conversation_id=conversation_id,
+            user_id=1,
+            direction="inbound",
+            message_type="text",
+            text=text,
+        )
+
+    async def found(query):
+        return sorted(item["text"] for item in await store.search_messages(query))
+
+    assert await found("100%") == ["100% sure"]
+    assert await found("a_b") == ["a_b"]
+    assert await found("\\") == ["back\\slash"]
+    assert await found("APPLES") == ["100 apples"]
+    await database.close()
