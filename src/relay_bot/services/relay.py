@@ -21,6 +21,20 @@ logger = logging.getLogger(__name__)
 SENT_REACTION_EMOJI = "👌"
 
 
+def _split_line(line: str, max_chars: int) -> list[str]:
+    """Split one very long (already HTML-escaped) line without cutting an entity like &lt;."""
+    pieces: list[str] = []
+    while len(line) > max_chars:
+        cut = max_chars
+        amp = line.rfind("&", 0, cut)
+        if amp != -1 and ";" not in line[amp:cut]:
+            cut = amp or max_chars
+        pieces.append(line[:cut])
+        line = line[cut:]
+    pieces.append(line)
+    return pieces
+
+
 class RelayService:
     def __init__(self, *, settings: Settings, store: Store) -> None:
         self.settings = settings
@@ -193,7 +207,11 @@ class RelayService:
             return ["No stored messages for this user yet."]
         if limit is not None:
             messages = messages[-limit:]
-        lines = self._history_lines(messages)
+        lines = [
+            piece
+            for line in self._history_lines(messages)
+            for piece in _split_line(line, max_chars)
+        ]
         chunks: list[str] = []
         current = ""
         for line in lines:
