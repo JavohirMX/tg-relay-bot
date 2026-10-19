@@ -4,7 +4,9 @@ from aiogram.types import Message
 
 
 def message_type(message: Message) -> str:
-    return str(message.content_type)
+    # ContentType is a str enum; str() gives "ContentType.TEXT" on Python 3.11+.
+    content_type = message.content_type
+    return str(getattr(content_type, "value", content_type))
 
 
 def extract_file_id(message: Message) -> str | None:
