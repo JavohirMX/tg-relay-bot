@@ -26,21 +26,28 @@ class RelayService:
         self.settings = settings
         self.store = store
 
-    async def relay_from_user(self, bot: Bot, message: Message) -> None:
+    async def relay_from_user(self, bot: Bot, message: Message) -> bool:
+        """Relay a user message to the admin. Returns False if it could not be delivered."""
         if message.from_user is None:
-            return
+            return False
 
         user = await self.store.upsert_user(message.from_user)
         conversation_id = await self.store.ensure_conversation(message.from_user.id)
-        card = await bot.send_message(
-            chat_id=self.settings.admin_telegram_id,
-            text=self._admin_card(user),
-            reply_markup=relay_actions(
-                message.from_user.id,
-                blocked=bool(user["is_blocked"]),
-                muted=bool(user["is_muted"]),
-            ),
-        )
+        try:
+            card = await bot.send_message(
+                chat_id=self.settings.admin_telegram_id,
+                text=self._admin_card(user),
+                reply_markup=relay_actions(
+                    message.from_user.id,
+                    blocked=bool(user["is_blocked"]),
+                    muted=bool(user["is_muted"]),
+                ),
+            )
+        except TelegramAPIError as error:
+            # Keep the user's message in history so it is not lost, and tell them.
+            logger.warning("Could not deliver relay card to admin: %s", error)
+            await self.record_inbound_only(message)
+            return False
         try:
             copied = await bot.copy_message(
                 chat_id=self.settings.admin_telegram_id,
@@ -84,6 +91,7 @@ class RelayService:
                 conversation_id=conversation_id,
                 message_id=stored_message_id,
             )
+        return True
 
     async def relay_from_admin_reply(self, bot: Bot, message: Message) -> bool:
         if message.reply_to_message is None:

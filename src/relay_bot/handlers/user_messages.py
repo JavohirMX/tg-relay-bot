@@ -57,7 +57,11 @@ async def relay_user_message(
         await message.answer(rate_limit_message(decision))
         return
 
-    await relay_service.relay_from_user(bot, message)
+    if not await relay_service.relay_from_user(bot, message):
+        await message.answer(
+            "Sorry, your message could not be delivered right now. Please try again later."
+        )
+        return
     if decision.warning_message:
         await message.answer(decision.warning_message)
 
